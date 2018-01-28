@@ -103,3 +103,7 @@ ENV/
 # data
 /data
 /data/*
+
+# Scrapy objects
+*/logs
+*/spiders/*.ipynb
