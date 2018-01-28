@@ -105,5 +105,5 @@ ENV/
 /data/*
 
 # Scrapy objects
-*/logs
-*/spiders/*.ipynb
+**/logs
+**/spiders/*.ipynb
