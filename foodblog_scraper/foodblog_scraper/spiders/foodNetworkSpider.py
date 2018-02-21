@@ -7,13 +7,19 @@ class foodNetworkSpider(scrapy.Spider):
     
     start_urls = ['http://www.foodnetwork.com/topics/']
     
-    def parse(self, response):
-#         tmp = response.css('div.o-Capsule__m-Body li.m-PromoList__a-ListItem a::attr(href)')
-#         tmp3 = tmp[:2]
+    def parse(self, response):       
+        topicSelectors = response.css('div.o-Capsule__m-Body li.m-PromoList__a-ListItem a')
+        topicSelectors = topicSelectors[:10]
         
-#         for href in tmp3:
-        for href in response.css('div.o-Capsule__m-Body li.m-PromoList__a-ListItem a::attr(href)'):
-            yield response.follow(href, self.parse_topic)
+        for topicSelector in topicSelectors:
+            topicName = topicSelector.xpath('./text()').extract_first()
+        
+            # Portobello Mushroom has an issue --- contains over 100,000 recipes and 
+            # most are not mushroom recipesf
+            if topicName != 'Portobello Mushroom':
+                href = topicSelector.css('a::attr(href)').extract_first()
+                yield response.follow(href, self.parse_topic)
+                
     
     def parse_topic(self, response):
         # follow links to individual recipes. Specifically only chooses recipeResults
