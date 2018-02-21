@@ -22,6 +22,12 @@ class foodNetworkSpider(scrapy.Spider):
                 
     
     def parse_topic(self, response):
+        """
+        On the topic page, navigate to actual recipe or if it is a video,
+        navigate to the video page and then to the recipe page.
+        
+        Will also navigate the next button while it exists.
+        """
         # follow links to individual recipes. Specifically only chooses recipeResults
         # since other results may also exist (videos/article)
         
@@ -50,6 +56,9 @@ class foodNetworkSpider(scrapy.Spider):
             yield response.follow(pageLink, self.parse_topic)
             
     def parse_video_page(self, response):
+        """
+        Continue on to recipe page if possible
+        """
         # continue to actual recipe
         videoButtonLink = response.css('a.o-VideoMetadata__a-Button')
         buttonText = videoButtonLink.xpath('./text()').extract_first()
@@ -62,6 +71,9 @@ class foodNetworkSpider(scrapy.Spider):
                 yield response.follow(recipeLink, self.parse_recipe)
         
     def parse_recipe(self, response):
+        """
+        Actually scrape recipe information from the final recipe webpage
+        """
         
         # Utility function for extracting first string and cleaning it
         def extract_with_xpath(selector, query):
