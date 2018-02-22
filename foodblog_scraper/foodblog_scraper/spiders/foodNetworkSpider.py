@@ -4,7 +4,7 @@ import re
 
 class foodNetworkSpider(scrapy.Spider):
     name = 'foodNetwork'
-    
+    allowed_domains = ['https://www.foodnetwork.com/']
     start_urls = ['http://www.foodnetwork.com/topics/']
     
     def parse(self, response):       
