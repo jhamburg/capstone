@@ -9,7 +9,7 @@ class foodNetworkSpider(scrapy.Spider):
     
     def parse(self, response):       
         topicSelectors = response.css('div.o-Capsule__m-Body li.m-PromoList__a-ListItem a')
-        topicSelectors = topicSelectors[:10]
+#         topicSelectors = topicSelectors[:10]
         
         for topicSelector in topicSelectors:
             topicName = topicSelector.xpath('./text()').extract_first()
