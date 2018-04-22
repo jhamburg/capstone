@@ -1,3 +1,18 @@
+###### Personal additions ######
+# data
+/data
+/data/*
+
+# Extra non-tracked items
+/non-tracked/*
+/non-tracked
+
+# Scrapy objects
+**/logs
+**/spiders/*.ipynb
+
+##### Python github generated content below ######
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -100,10 +115,3 @@ ENV/
 # mypy
 .mypy_cache/
 
-# data
-/data
-/data/*
-
-# Scrapy objects
-**/logs
-**/spiders/*.ipynb
