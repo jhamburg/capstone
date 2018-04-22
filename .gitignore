@@ -4,8 +4,8 @@
 /data/*
 
 # Extra non-tracked items
-/non-tracked/*
-/non-tracked
+/non_tracked/*
+/non_tracked
 
 # Scrapy objects
 **/logs
