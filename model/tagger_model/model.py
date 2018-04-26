@@ -2,7 +2,7 @@ from keras.utils import to_categorical
 from keras.models import Model
 from keras.layers import Input, concatenate, Concatenate, TimeDistributed, Dense, Bidirectional, Dropout
 from keras.layers.embeddings import Embedding
-from keras.layers.recurrent import LSTM
+from keras.layers.recurrent import LSTM, GRU
 from keras_contrib.layers import CRF
 from keras.optimizers import Adam
 from keras import regularizers
@@ -22,7 +22,7 @@ def create_model(seq_input_len, n_word_input_nodes, n_tag_input_nodes,
 
     #Layers 1
     word_input = Input(batch_shape=(batch_size, seq_input_len), name='word_input_layer')
-    tag_input = Input(batch_shape=(batch_size, seq_input_len), name='tag_input_layer')
+#     tag_input = Input(batch_shape=(batch_size, seq_input_len), name='tag_input_layer')
 
     #Layers 2
     #mask_zero will ignore 0 padding
@@ -30,30 +30,32 @@ def create_model(seq_input_len, n_word_input_nodes, n_tag_input_nodes,
                                 output_dim=n_word_embedding_nodes, 
                                 mask_zero=True, name='word_embedding_layer')(word_input) 
     #Output shape = (batch_size, seq_input_len, n_word_embedding_nodes)
-    tag_embeddings = Embedding(input_dim=n_tag_input_nodes,
-                               output_dim=n_tag_embedding_nodes,
-                               mask_zero=True,
-                               name='tag_embedding_layer')(tag_input) 
+#     tag_embeddings = Embedding(input_dim=n_tag_input_nodes,
+#                                output_dim=n_tag_embedding_nodes,
+#                                mask_zero=True,
+#                                name='tag_embedding_layer')(tag_input) 
     #Output shape = (batch_size, seq_input_len, n_tag_embedding_nodes)
 
     #Layer 3
-    merged_embeddings = concatenate([word_embeddings, tag_embeddings], name='concat_embedding_layer')
+#     merged_embeddings = Concatenate(axis=-1, name='concat_embedding_layer')([word_embeddings, tag_embeddings])
+#     merged_embeddings = concatenate([word_embeddings, tag_embeddings], name='concat_embedding_layer')
     #Output shape =  (batch_size, seq_input_len, n_word_embedding_nodes + n_tag_embedding_nodes)
 
-    drop_out1 = Dropout(drop_out)(merged_embeddings)
+#     drop_out1 = Dropout(drop_out)(merged_embeddings)
+#     drop_out1 = Dropout(drop_out)(word_embeddings)
     
     #Layer 4
-    hidden_layer = Bidirectional(LSTM(units=n_RNN_nodes, return_sequences=True, 
-                                      recurrent_dropout=recurrent_dropout,
-                                     stateful=stateful, name='hidden_layer'))(drop_out1)
+    hidden_layer = Bidirectional(GRU(units=n_RNN_nodes, return_sequences=True, 
+                                      recurrent_dropout=recurrent_dropout, dropout=drop_out,
+                                     stateful=stateful, name='hidden_layer'))(word_embeddings)
     #Output shape = (batch_size, seq_input_len, n_hidden_nodes)
 
-    drop_out2 = Dropout(drop_out)(hidden_layer)
+#     drop_out2 = TimeDistributed(Dropout(drop_out))(hidden_layer)
     
-    #Layer 5
-    dense_layer = TimeDistributed(Dense(units=n_dense_nodes, activation='relu'), name='dense_layer')(drop_out2)
+#     #Layer 5
+    dense_layer = TimeDistributed(Dense(units=n_dense_nodes, activation='relu'), name='dense_layer')(hidden_layer)
 
-    drop_out3 = Dropout(drop_out)(dense_layer)
+#     drop_out3 = TimeDistributed(Dropout(drop_out))(dense_layer)
     
     #Layer 6
     if crf:
@@ -65,21 +67,21 @@ def create_model(seq_input_len, n_word_input_nodes, n_tag_input_nodes,
         acc = crf.accuracy
     else:
         output_layer = TimeDistributed(Dense(units=n_tag_input_nodes, activation='softmax'), 
-                                       name='output_layer')(drop_out3)
+                                       name='output_layer')(dense_layer)
         loss = "sparse_categorical_crossentropy" 
         acc = 'acc'
     # Output shape = (batch_size, seq_input_len, n_tag_input_nodes)
 
     #Specify which layers are input and output, compile model with loss and optimization functions
-    model = Model(inputs=[word_input, tag_input], outputs=output_layer)
-#     model = Model(inputs=[word_input], outputs=output_layer)
+#     model = Model(inputs=[word_input, tag_input], outputs=output_layer)
+    model = Model(inputs=[word_input], outputs=output_layer)
     model.compile(loss=loss, optimizer="adam", metrics=[acc])
 
     return model 
 
 
 def run_training_model(pad_words, pad_tags, y_dat, saveName, lexicon, 
-                       batch_size=128, epochs=15, val_split=.1, 
+                       batch_size=128, epochs=15, val_split=.2, 
                        print_summary=False, savePath='models', 
                        n_word_embedding_nodes=200,
                        n_tag_embedding_nodes=200,
@@ -108,9 +110,9 @@ def run_training_model(pad_words, pad_tags, y_dat, saveName, lexicon,
 
     # output matrix (y) has extra 3rd dimension added because sparse cross-entropy 
     # function requires one label per row
-    model.fit(x=[pad_words[:,:-1], pad_tags[:,:-1]], 
-#     model.fit(x=[pad_words[:,1:]], 
-              y=pad_tags[:, :-1, None], batch_size=batch_size, 
+#     model.fit(x=[pad_words[:,1:], pad_tags[:,:-1]], 
+    model.fit(x=[pad_words[:,1:]], 
+              y=pad_tags[:, 1:, None], batch_size=batch_size, 
               epochs=epochs, validation_split=val_split,
               callbacks=callbacks_list)
 
@@ -146,14 +148,14 @@ def predict_new_tag(predictor_model, test, lexicon):
         tok_sent = sent['sents']
         sent_idxs = sent['sent_indx']
         sent_pred_tags = []
-        prev_tag = 1  #initialize predicted tag sequence with padding
-#         prev_tag = 0  #initialize predicted tag sequence with padding
+#         prev_tag = 1  #initialize predicted tag sequence with padding
+        prev_tag = 0  #initialize predicted tag sequence with padding
         for cur_word in sent_idxs:
             # cur_word and prev_tag are just integers, but the model expects an input array
             # with the shape (batch_size, seq_input_len), so prepend two dimensions to these values
-#             p_next_tag = predictor_model.predict(x=[np.array(cur_word)[None, None]])[0]            
-            p_next_tag = predictor_model.predict(x=[np.array(cur_word)[None, None],
-                                                    np.array(prev_tag)[None, None]])[0]
+            p_next_tag = predictor_model.predict(x=[np.array(cur_word)[None, None]])[0]            
+#             p_next_tag = predictor_model.predict(x=[np.array(cur_word)[None, None],
+#                                                     np.array(prev_tag)[None, None]])[0]
             prev_tag = np.argmax(p_next_tag, axis=-1)[0]
             sent_pred_tags.append(prev_tag)
         predictor_model.reset_states()
