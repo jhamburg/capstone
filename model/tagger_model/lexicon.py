@@ -112,7 +112,7 @@ class lexiconTransformer():
             self.words_lexicon = pickle.load(f)
             
         with open(os.path.join(self.savePath, self.saveNamePrefix + 'tags_lexicon.pkl'), 'rb') as f:
-            self.tags_lexicon = pickle.pickle.load(f)
+            self.tags_lexicon = pickle.load(f)
         
         self.make_lexicon_reverse()
         
