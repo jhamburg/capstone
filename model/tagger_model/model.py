@@ -124,17 +124,19 @@ def create_test_model(loadName, lexicon, loadPath='models',
                       n_tag_embedding_nodes=200,
                       n_RNN_nodes=300, 
                       n_dense_nodes=100,
-                      crf=False):
+                      crf=False,
+                      seq_input_len=1,
+                      stateful=True):
     """ Loads a model to predict new data"""
     
-    model = create_model(seq_input_len=1,
+    model = create_model(seq_input_len=seq_input_len,
                          n_word_input_nodes=len(lexicon.words_lexicon) + 1, #Add one for 0 padding
                          n_tag_input_nodes=len(lexicon.tags_lexicon) + 1, #Add one for 0 padding
                          n_word_embedding_nodes=n_word_embedding_nodes,
                          n_tag_embedding_nodes=n_tag_embedding_nodes,
                          n_RNN_nodes=n_RNN_nodes, 
                          n_dense_nodes=n_dense_nodes,
-                         stateful=True, batch_size=1,
+                         stateful=stateful, batch_size=1,
                          crf=crf)
 
     model.load_weights(os.path.join(loadPath, loadName + '.hdf5'))
