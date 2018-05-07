@@ -9,7 +9,8 @@ class lexiconTransformer():
        to indexes for use in the model."""
     
     def __init__(self, words_min_freq = 1, tags_min_freq = 1, 
-                 savePath = 'models', unknown_word_token = u'<UNK>',
+                 savePath = 'models', saveNamePrefix='', 
+                 unknown_word_token = u'<UNK>',
                  unknown_tag_token = u'<UNK>'):
         self.words_min_freq = words_min_freq
         self.tags_min_freq = tags_min_freq
@@ -20,6 +21,7 @@ class lexiconTransformer():
         self.unknown_tag_token = unknown_tag_token
         self.indx_to_tags_dict = None
         self.savePath = savePath
+        self.saveNamePrefix = saveNamePrefix
     
     def fit(self, sents, tags):
         """Create lexicon based on sentences and tags"""
@@ -99,18 +101,18 @@ class lexiconTransformer():
         "Save lexicons by pickling them"
         if not os.path.exists(self.savePath):
             os.makedirs(self.savePath)
-        with open(os.path.join(self.savePath, 'words_lexicon.pkl'), 'wb') as f:
+        with open(os.path.join(self.savePath, self.saveNamePrefix + 'words_lexicon.pkl'), 'wb') as f:
             pickle.dump(self.words_lexicon, f)
             
-        with open(os.path.join(self.savePath, 'tags_lexicon.pkl'), 'wb') as f:
+        with open(os.path.join(self.savePath, self.saveNamePrefix + 'tags_lexicon.pkl'), 'wb') as f:
             pickle.dump(self.tags_lexicon, f)
             
     def load_lexicon(self):
-        with open(os.path.join(self.savePath, 'words_lexicon.pkl'), 'rb') as f:
+        with open(os.path.join(self.savePath, self.saveNamePrefix + 'words_lexicon.pkl'), 'rb') as f:
             self.words_lexicon = pickle.load(f)
             
-        with open(os.path.join(self.savePath, 'tags_lexicon.pkl'), 'rb') as f:
-            self.tags_lexicon = pickle.pickle.load(f)
+        with open(os.path.join(self.savePath, self.saveNamePrefix + 'tags_lexicon.pkl'), 'rb') as f:
+            self.tags_lexicon = pickle.load(f)
         
         self.make_lexicon_reverse()
         
